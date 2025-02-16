@@ -160,6 +160,7 @@ class Star {
 
 // ==== SETUP ==== 
 
+// Ensure there is only one setup() function in your sketch
 function setup() {
     createCanvas(windowWidth, windowHeight);
     pixelDensity(1);
@@ -176,43 +177,96 @@ function setup() {
     setupGame();
 }
 
+// Add a touchStarted() to trigger the game start on mobile
+function mousePressed() {
+    if (gameState.status === 'start') {
+        startGame();
+    }
+    // Also check for touch interactions on control buttons, etc.
+    return false;
+}
+
+// Modified button creation and handling
 function createGameButtons() {
     playButton = createButton('Play');
     helpButton = createButton('Help');
     menuButton = createButton('Menu');
 
-    styleButton(playButton, '#4CAF50');
-    styleButton(helpButton, '#FFC107');
-    styleButton(menuButton, '#2196F3');
+    // Enhanced button styling with touch-friendly properties
+    const buttonStyle = {
+        'background-color': '#4CAF50',
+        'color': 'white',
+        'padding': '15px 30px', // Larger touch target
+        'border': 'none',
+        'border-radius': '5px',
+        'font-size': '18px', // Larger text
+        'cursor': 'pointer',
+        'transition': 'all 0.3s ease',
+        'touch-action': 'manipulation', // Optimize for touch
+        'user-select': 'none', // Prevent text selection
+        '-webkit-tap-highlight-color': 'transparent', // Remove tap highlight on mobile
+        'position': 'absolute', // Use absolute positioning
+        'z-index': '1000' // Ensure buttons are above canvas
+    };
+
+    // Apply styles to each button
+    [playButton, helpButton, menuButton].forEach(button => {
+        Object.entries(buttonStyle).forEach(([property, value]) => {
+            button.style(property, value);
+        });
+    });
+
+    // Set specific colors for each button
+    playButton.style('background-color', '#4CAF50');
+    helpButton.style('background-color', '#FFC107');
+    menuButton.style('background-color', '#2196F3');
+
+    // Add touch event listeners
+    [playButton, helpButton, menuButton].forEach(button => {
+        button.elt.addEventListener('touchstart', function (e) {
+            e.preventDefault(); // Prevent double-firing
+            this.click(); // Trigger click event
+        }, { passive: false });
+    });
 
     repositionButtons();
 
-    playButton.mousePressed(startGame);
-    helpButton.mousePressed(showHelp);
-    menuButton.mousePressed(showMenu);
+    // Modified event handlers
+    playButton.mousePressed(() => {
+        if (gameState.status === 'start') {
+            startGame();
+        }
+    });
+
+    helpButton.mousePressed(() => {
+        showHelp();
+    });
+
+    menuButton.mousePressed(() => {
+        showMenu();
+    });
 
     menuButton.hide();
 }
 
-function styleButton(button, colorVal) {
-    button.class('game-button');
-    button.style('background-color', colorVal);
-    button.style('color', 'white');
-    button.style('padding', '10px 20px');
-    button.style('border', 'none');
-    button.style('border-radius', '5px');
-    button.style('font-size', '16px');
-    button.style('cursor', 'pointer');
-    button.style('transition', 'all 0.3s ease');
-}
-
+// Modified button positioning
 function repositionButtons() {
-    let centerX = width / 2;
-    let centerY = height / 2;
+    const centerX = windowWidth / 2;
+    const centerY = windowHeight / 2;
+
+    // Position buttons with pixel values instead of percentages
     playButton.position(centerX - 100, centerY);
     helpButton.position(centerX + 20, centerY);
     menuButton.position(20, 20);
 }
+
+// Add this to your windowResized function
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    repositionButtons();
+    updateTouchControlPositions();
+}
+
 
 function drawStarfield() {
     for (let star of stars) {
@@ -453,6 +507,7 @@ function drawStartScreen() {
     background(0);
     drawStarfield();
     image(assets.images.background, width / 2, height / 2, width, height);
+
     push();
     fill(255);
     textSize(48);
